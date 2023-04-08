@@ -1,27 +1,43 @@
 # oop-ffi
-Utilities to create FFI to OOP code
+Utilities to convert JavaScript classes into FFI bindings for PureScript.
 
-Declare the foreign class:
+This tool does the following to you:
+- Generates the .purs and .js code;
+- Wraps multi-parameters functions with `EffectFn_` and `runEffectFn_`;
+- Expose only the relevant binding functions (not the `_Impl` ones)
+- Optional properties are wrapped into `Maybe`;
+- Creates a typeclass for each class;
+- Extends typeclasses to preserve inheritance.
+
+Declare how the foreign class looks like:
 
 ```purescript
 personClass :: ClassSpec
 personClass =
-  { name: "Person"
-  , namespace: "Person"
+  { name: "Person" -- instances of this class will have the type "PersonInstance"
+  , namespace: "Person" -- how the generated js will call "new _"
   , constructor: [ "String" ]
   , extends: []
   , members:
-      [ Member "name" true "String"
+      [ Member "name" true "String" -- name, required, type
       , Member "job" false "String"
       ]
   , methods:
-      [ Method "setJob" [ "String" ] "Person"
+      [ Method "setJob" [ "String" ] "Person" -- name, args, return type
       , Method "sayName" [] "Unit"
       ]
   }
 ```
 
-It generates the .purs and .js code:
+Then feed it into `generatePurs` and `generateJs`:
+
+```purescript
+generate :: Effect Unit
+generate = do
+  log (generatePurs personClass)
+  log (generateJs personClass)```
+
+The output .purs and .js code look like this:
 
 ```purescript
 module Person where
@@ -53,6 +69,8 @@ export const setJobImpl = (a, obj) => obj.setJob(a);
 (...)
 ```
 
+Check the `generated.*` files under `/test` for the full examples.
+
 ## Inheritance
 
 It can also create inheritance hierarquies:
@@ -71,8 +89,8 @@ instance Person WorkerInstance
 instance Worker WorkerInstance
 ```
 
-
-## Still lacks:
-- Support methods that return nullable values
-- Support union types for arguments
-- Support for record arguments with optional properties
+# Current Issues:
+- Lacks support methods that return nullable values
+- Lacks support union types for arguments
+- Lacks support for record arguments with optional properties
+- You need to import the library and run it somewhere to get the output, then copy it into a file. A CLI workflow would be better.

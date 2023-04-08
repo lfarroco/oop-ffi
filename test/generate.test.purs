@@ -4,43 +4,44 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Console (log)
-import Main (ClassSpec, Member(..), Method(..), generatePurs)
+import Main (ClassSpec, Member(..), Method(..), generateJs, generatePurs)
 
 generate :: Effect Unit
 generate = do
   log (generatePurs personClass)
-  --log (generateJs workerClass)
-  log (generatePurs workerClass)
-
---log (generateJs workerClass)
+  log (generateJs personClass)
+  log (generatePurs employeeClass)
+  log (generateJs employeeClass)
 
 personClass :: ClassSpec
 personClass =
   { name: "Person"
   , namespace: "Person"
-  , constructor: [ "String" ]
   , extends: []
+  , constructor: [ "String", "Int" ]
   , members:
-      [ Member "name" true "String"
-      , Member "job" false "String"
+      [ Member "name" true "Unit"
+      , Member "age" true "Int"
       ]
   , methods:
-      [ Method "setJob" [ "String" ] "Person"
-      , Method "sayName" [] "Unit"
+      [ Method "sayName" [] "Unit"
+      , Method "setAge" [ "Int" ] "Person"
       ]
   }
 
-workerClass :: ClassSpec
-workerClass =
-  { name: "Worker"
-  , namespace: "Worker"
-  , constructor: [ "String", "String", "String" ]
+employeeClass :: ClassSpec
+employeeClass =
+  { name: "Employee"
+  , namespace: "Employee"
   , extends: [ "Person" ]
+  , constructor: [ "String", "Int", "String" ]
   , members:
       [ Member "employer" true "String"
+      , Member "room" false "Int"
       ]
   , methods:
-      [ Method "sayOccupation" [] "Unit"
+      [ Method "sayEmployer" [] "Unit"
+      , Method "setRoom" [ "Int" ] "Employee"
       ]
   }
 
