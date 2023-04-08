@@ -27,8 +27,12 @@ Declare how the foreign class looks like using JSON:
   ]
 }
 ```
-Then, generate the .purs and .js files:
-`node . --path ./path/to/json/spec.json --output /somewhere/
+
+Then, to generate the .purs and .js files:
+`npx lfarroco/oop-ffi --path ./path/to/spec.json --output ./where_to_place_files/`
+
+You can also import this lib in PureScript and use `generatePurs` and `generateJs` to 
+log to the files' contents to the console.
 
 The files should look like this:
 
