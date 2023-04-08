@@ -2,9 +2,6 @@ module Test.Main where
 
 import Prelude
 
-import Data.Argonaut.Core (Json)
-import Data.Argonaut.Parser (jsonParser)
-import Data.Either (Either)
 import Effect (Effect)
 import Effect.Console (log)
 import Employee (class Employee)
@@ -13,27 +10,6 @@ import GenerationTest as GenerationTest
 import Person (class Person)
 import Person as Person
 import TestClasses as TestClasses
-
-personSpec :: Either String Json
-personSpec = jsonParser
-  """
-
-{
-  "name": "Person",
-  "namespace": "Person",
-  "constructor": ["String", "Int"],
-  "extends": [],
-  "members": [
-      { "name": "name", "required": true, "returns": "Unit"},
-      { "name": "age", "required": true, "returns": "Int"}
-  ],
-  "methods": [
-      { "name": "sayName", "args": [], "returns": "Unit"},
-      { "name": "sayAge", "args": ["Int"], "returns": "Person"}
-  ]
-}
-
-"""
 
 main :: Effect Unit
 main = do

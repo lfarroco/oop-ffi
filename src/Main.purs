@@ -13,7 +13,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Console (log)
 import Node.Encoding (Encoding(..))
-import Node.FS.Sync (readTextFile, writeTextFile, mkdir)
+import Node.FS.Sync (readTextFile, writeTextFile)
 import Options.Applicative (Parser, execParser, help, helper, info, long, metavar, strOption, (<**>))
 
 -- TODO: support methods that may return a nullable
@@ -32,8 +32,8 @@ type ClassSpec =
 
 data Args = Args { path :: String, output :: String }
 
-args :: Parser Args
-args = ado
+cliArgs :: Parser Args
+cliArgs = ado
   path <- strOption $ fold
     [ long "path"
     , metavar "TARGET"
@@ -48,7 +48,7 @@ args = ado
 
 main :: Effect Unit
 main = do
-  (Args { path, output }) <- execParser $ info (args <**> helper) mempty
+  (Args { path, output }) <- execParser $ info (cliArgs <**> helper) mempty
   file <- readTextFile UTF8 path
   let spec = jsonParser file
   let result = spec >>= decodeClass
@@ -65,7 +65,7 @@ generatePurs { name, constructor, extends, members, methods } =
     constructorArgCount = Array.length constructor
     allArgumentLengths =
       ( ( methods
-            # map (\({ args }) -> Array.length args + 1)
+            # map (\{ args } -> Array.length args + 1)
         )
           <> [ constructorArgCount ]
           <> (if Array.length members > 0 then [ 1 ] else [])
