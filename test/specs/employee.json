@@ -1,0 +1,38 @@
+{
+	"name": "Employee",
+	"namespace": "Employee",
+	"constructor": [
+		"String",
+		"Int",
+		"String"
+	],
+	"extends": [
+		"Person"
+	],
+	"members": [
+		{
+			"name": "employer",
+			"required": true,
+			"returns": "String"
+		},
+		{
+			"name": "room",
+			"required": false,
+			"returns": "Int"
+		}
+	],
+	"methods": [
+		{
+			"name": "sayEmployer",
+			"args": [],
+			"returns": "Unit"
+		},
+		{
+			"name": "setRoom",
+			"args": [
+				"Int"
+			],
+			"returns": "Employee"
+		}
+	]
+}

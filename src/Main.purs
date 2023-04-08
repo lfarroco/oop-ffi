@@ -1,21 +1,25 @@
-module Main
-  ( ClassSpec
-  , Member(..)
-  , Method(..)
-  , generateJs
-  , generatePurs
-  ) where
+module Main where
 
 import Prelude
 
+import Data.Argonaut.Core (Json)
+import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Parser (jsonParser)
+import Data.Array (fold)
 import Data.Array as Array
+import Data.Either (Either(..))
 import Data.String as String
 import Data.Tuple (Tuple(..))
+import Effect (Effect)
+import Effect.Console (log)
+import Node.Encoding (Encoding(..))
+import Node.FS.Sync (readTextFile, writeTextFile, mkdir)
+import Options.Applicative (Parser, execParser, help, helper, info, long, metavar, strOption, (<**>))
 
 -- TODO: support methods that may return a nullable
 
-data Member = Member String Boolean String -- name, required, returns
-data Method = Method String (Array String) String -- name, args, returns
+type Member = { name :: String, required :: Boolean, returns :: String }
+type Method = { name :: String, args :: Array String, returns :: String }
 
 type ClassSpec =
   { name :: String
@@ -26,13 +30,42 @@ type ClassSpec =
   , methods :: Array Method
   }
 
+data Args = Args { path :: String, output :: String }
+
+args :: Parser Args
+args = ado
+  path <- strOption $ fold
+    [ long "path"
+    , metavar "TARGET"
+    , help "The file location"
+    ]
+  output <- strOption $ fold
+    [ long "output"
+    , metavar "TARGET"
+    , help "The location to output the generated files"
+    ]
+  in Args { path, output }
+
+main :: Effect Unit
+main = do
+  (Args { path, output }) <- execParser $ info (args <**> helper) mempty
+  file <- readTextFile UTF8 path
+  let spec = jsonParser file
+  let result = spec >>= decodeClass
+  case result of
+    Left err -> log err
+    Right classSpec -> do
+      writeTextFile UTF8 (output <> classSpec.name <> ".purs") $ generatePurs classSpec
+      writeTextFile UTF8 (output <> classSpec.name <> ".js") $ generateJs classSpec
+      log "Done"
+
 generatePurs :: ClassSpec -> String
 generatePurs { name, constructor, extends, members, methods } =
   let
     constructorArgCount = Array.length constructor
     allArgumentLengths =
       ( ( methods
-            # map (\(Method _ args _) -> Array.length args + 1)
+            # map (\({ args }) -> Array.length args + 1)
         )
           <> [ constructorArgCount ]
           <> (if Array.length members > 0 then [ 1 ] else [])
@@ -48,7 +81,12 @@ generatePurs { name, constructor, extends, members, methods } =
       , "import Data.Maybe (Maybe)"
       , "import Data.Nullable (Nullable, toMaybe)"
       , "import Effect (Effect)"
-      , "import Effect.Uncurried (" <> Array.intercalate ", " (allArgumentLengths # map (\x -> "EffectFn" <> (show x) <> ", runEffectFn" <> (show x))) <> ")"
+      , "import Effect.Uncurried ("
+          <> Array.intercalate ", "
+            ( allArgumentLengths
+                # map (\x -> "EffectFn" <> (show x) <> ", runEffectFn" <> (show x))
+            )
+          <> ")"
       ]
         <> (extends # map (\extend -> "import " <> extend <> " (class " <> extend <> ")"))
         <>
@@ -58,6 +96,11 @@ generatePurs { name, constructor, extends, members, methods } =
         <> pursMembers name members
         <> pursMethods methods name
         <> [ "", "" ]
+
+decodeClass :: Json -> Either String ClassSpec
+decodeClass json = case decodeJson json of
+  Left err -> Left $ show err
+  Right spec -> Right spec
 
 pursConstructor :: Int -> Array String -> String -> Array String
 pursConstructor constructorArgCount constructor name =
@@ -70,38 +113,38 @@ pursConstructor constructorArgCount constructor name =
   ]
 
 pursMembers :: String -> Array Member -> Array String
-pursMembers name members = members
+pursMembers className members = members
   >>=
-    ( \(Member memberName required returns) ->
+    ( \{ name, required, returns } ->
         let
           nullableLabel = if required then returns else "(Nullable " <> returns <> ")"
           returnLabel = if required then returns else "(Maybe " <> returns <> ")"
           toMaybeLabel = if required then "" else ">=> (toMaybe >>> pure)"
-          implName = memberName <> "Impl"
+          implName = name <> "Impl"
         in
           [ "foreign import " <> implName <> ":: forall a. EffectFn1 a " <> nullableLabel
           , ""
-          , memberName <> " :: forall a. " <> name <> " a => a -> Effect " <> returnLabel
-          , memberName <> " = runEffectFn1 " <> implName <> toMaybeLabel
+          , name <> " :: forall a. " <> className <> " a => a -> Effect " <> returnLabel
+          , name <> " = runEffectFn1 " <> implName <> toMaybeLabel
           , ""
           ]
     )
 
 pursMethods :: Array Method -> String -> Array String
-pursMethods methods name = methods
+pursMethods methods className = methods
   >>=
-    ( \(Method methodName args returns) ->
+    ( \{ name, args, returns } ->
         let
           argCount = Array.length args
-          implName = methodName <> "Impl"
-          lowerCaseName = String.toLower name
-          returnTypeImpl = if returns == name then lowerCaseName else returns
-          returnTypeMethod = if returns == name then lowerCaseName else returns
+          implName = name <> "Impl"
+          lowerCaseName = String.toLower className
+          returnTypeImpl = if returns == className then lowerCaseName else returns
+          returnTypeMethod = if returns == className then lowerCaseName else returns
         in
           [ "foreign import " <> implName <> ":: forall " <> lowerCaseName <> ". EffectFn" <> (show $ argCount + 1) <> " " <> (Array.intercalate " " $ args <> [ lowerCaseName, returnTypeImpl ])
           , ""
-          , methodName <> " :: forall " <> lowerCaseName <> ". " <> name <> " " <> lowerCaseName <> " => " <> (Array.intercalate " -> " (args <> [ lowerCaseName ])) <> " -> Effect " <> returnTypeMethod
-          , methodName <> " = " <> ("runEffectFn" <> (show $ argCount + 1)) <> " " <> implName
+          , name <> " :: forall " <> lowerCaseName <> ". " <> className <> " " <> lowerCaseName <> " => " <> (Array.intercalate " -> " (args <> [ lowerCaseName ])) <> " -> Effect " <> returnTypeMethod
+          , name <> " = " <> ("runEffectFn" <> (show $ argCount + 1)) <> " " <> implName
           , ""
 
           ]
@@ -129,8 +172,8 @@ jsMembers :: Array Member -> Array String
 jsMembers members =
   members
     >>=
-      ( \(Member memberName _ _) ->
-          [ "export const " <> memberName <> "Impl = obj => obj." <> memberName <> ";"
+      ( \{ name } ->
+          [ "export const " <> name <> "Impl = obj => obj." <> name <> ";"
           , ""
           ]
       )
@@ -139,16 +182,16 @@ jsMethods :: Array Method -> Array String
 jsMethods methods =
   methods
     >>=
-      ( \(Method methodName args _) ->
+      ( \{ name, args } ->
           let
             charaArgs = argsToChars args
           in
             [ "export const "
-                <> methodName
+                <> name
                 <> "Impl = ("
                 <> Array.intercalate ", " (charaArgs <> [ "obj" ])
                 <> ") => obj."
-                <> methodName
+                <> name
                 <> "("
                 <> Array.intercalate ", " charaArgs
                 <> ");"

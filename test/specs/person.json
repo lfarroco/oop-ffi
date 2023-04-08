@@ -1,0 +1,14 @@
+{
+  "name": "Person",
+  "namespace": "Person",
+  "constructor": [ "String", "Int" ],
+  "extends": [],
+  "members": [
+    { "name": "name", "required": true, "returns": "Unit" },
+    { "name": "age", "required": true, "returns": "Int" }
+  ],
+  "methods": [
+    { "name": "sayName", "args": [], "returns": "Unit" },
+    { "name": "setAge", "args": [ "Int" ], "returns": "Person" }
+  ]
+}

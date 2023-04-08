@@ -2,27 +2,52 @@ module Test.Main where
 
 import Prelude
 
+import Data.Argonaut.Core (Json)
+import Data.Argonaut.Parser (jsonParser)
+import Data.Either (Either)
 import Effect (Effect)
 import Effect.Console (log)
 import Employee (class Employee)
 import Employee as Employee
-import GenerateTest as GenerateTest
+import GenerationTest as GenerationTest
 import Person (class Person)
 import Person as Person
 import TestClasses as TestClasses
 
+personSpec :: Either String Json
+personSpec = jsonParser
+  """
+
+{
+  "name": "Person",
+  "namespace": "Person",
+  "constructor": ["String", "Int"],
+  "extends": [],
+  "members": [
+      { "name": "name", "required": true, "returns": "Unit"},
+      { "name": "age", "required": true, "returns": "Int"}
+  ],
+  "methods": [
+      { "name": "sayName", "args": [], "returns": "Unit"},
+      { "name": "sayAge", "args": ["Int"], "returns": "Person"}
+  ]
+}
+
+"""
+
 main :: Effect Unit
 main = do
   TestClasses.expose
-  GenerateTest.generate
+  GenerationTest.generate
   log " ~~~ Person Tests ~~~"
-  log ""
+  log "Creating an instance of a class and using its methods:"
 
   person <- Person.newPerson "Person" 22
   personTests person
 
   log ""
   log " ~~~ Employee Tests ~~~"
+  log "Creating an instance from a class that extends Person:"
   log ""
 
   employee <- Employee.newEmployee "Employee" 33 "Telecom"
@@ -30,6 +55,7 @@ main = do
 
   log ""
   log " ~~~ Inheritance Tests ~~~"
+  log "The employee instance should support operations from the Person class:"
   log ""
 
   personTests employee
@@ -42,17 +68,16 @@ personTests :: forall p. Person p => p -> Effect Unit
 personTests person = do
   Person.sayName person
   age <- Person.age person
-  log $ "Person's age is " <> show age
+  log $ "My age is " <> show age
   Person.setAge (age + 1) person
     >>= Person.age
-    >>= \newAge -> log $ "Person's age changed to " <> show newAge
+    >>= \newAge -> log $ "My age changed to " <> show newAge
 
 employeeTests :: forall e. Employee e => e -> Effect Unit
 employeeTests employee = do
   Employee.sayEmployer employee
-  Employee.employer employee >>= log
   Employee.room employee
-    >>= \room -> log $ "The room number is " <> show room
+    >>= \room -> log $ "I don't have a room. Its number is " <> show room
   void $ Employee.setRoom 44 employee
   Employee.room employee
-    >>= \room -> log $ "Now the room number is " <> show room
+    >>= \room -> log $ "Now I have a room. Its number is " <> show room

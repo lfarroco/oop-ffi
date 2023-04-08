@@ -9,88 +9,82 @@ This tool does the following to you:
 - Creates a typeclass for each class;
 - Extends typeclasses to preserve inheritance.
 
-Declare how the foreign class looks like:
+Declare how the foreign class looks like using JSON:
 
-```purescript
-personClass :: ClassSpec
-personClass =
-  { name: "Person" -- instances of this class will have the type "PersonInstance"
-  , namespace: "Person" -- how the generated js will call "new _"
-  , constructor: [ "String" ]
-  , extends: []
-  , members:
-      [ Member "name" true "String" -- name, required, type
-      , Member "job" false "String"
-      ]
-  , methods:
-      [ Method "setJob" [ "String" ] "Person" -- name, args, return type
-      , Method "sayName" [] "Unit"
-      ]
-  }
+```json
+{
+  "name": "Person",
+  "namespace": "Person",
+  "constructor": [ "String", "Int" ],
+  "extends": [],
+  "members": [
+    { "name": "name", "required": true, "returns": "Unit" },
+    { "name": "age", "required": true, "returns": "Int" }
+  ],
+  "methods": [
+    { "name": "sayName", "args": [], "returns": "Unit" },
+    { "name": "setAge", "args": [ "Int" ], "returns": "Person" }
+  ]
+}
 ```
+Then, generate the .purs and .js files:
+`node . --path ./path/to/json/spec.json --output /somewhere/
 
-Then feed it into `generatePurs` and `generateJs`:
-
-```purescript
-generate :: Effect Unit
-generate = do
-  log (generatePurs personClass)
-  log (generateJs personClass)```
-
-The output .purs and .js code look like this:
+The files should look like this:
 
 ```purescript
 module Person where
-
 (...)
-
 foreign import data PersonInstance :: Type
 
-class Person :: forall k. k -> Constraint
+class Person:: forall k. k -> Constraint
 class Person a
 
 instance Person PersonInstance
 
-newPerson :: String -> Effect PersonInstance
-newPerson = runEffectFn1 newPersonImpl
+foreign import newPersonImpl :: EffectFn2 String Int PersonInstance
 
+newPerson :: String -> Int -> Effect PersonInstance
+newPerson = runEffectFn2 newPersonImpl
 (...)
 ```
 
 ```javascript
-export const newPersonImpl = (string) =>
-	new Person(string);
+export const newPersonImpl = (a, b) =>
+  new Person(a, b);
 
 export const nameImpl = obj => obj.name;
 
-export const jobImpl = obj => obj.job;
+export const ageImpl = obj => obj.age;
 
-export const setJobImpl = (a, obj) => obj.setJob(a);
+export const sayNameImpl = (obj) => obj.sayName();
 (...)
 ```
 
-Check the `generated.*` files under `/test` for the full examples.
+Check `/test` for some examples of specs and generated files.
 
 ## Inheritance
 
-It can also create inheritance hierarquies:
+If you declare some class names in the `extends` field, the generated 
+file will preserve the inheritance structure:
 
 ```purescript
-module Worker where
+module Employee where
+(...)
+foreign import data EmployeeInstance :: Type
 
--- A Worker should support the same methods/properties from a Person
+class Employee:: forall k. k -> Constraint
+class (Person a) <= Employee a
 
-foreign import data WorkerInstance :: Type
+instance Person EmployeeInstance
+instance Employee EmployeeInstance
 
-class Worker :: forall k. k -> Constraint
-class (Person a) <= Worker a
-
-instance Person WorkerInstance
-instance Worker WorkerInstance
+(...)
 ```
 
-# Current Issues:
-- Lacks support methods that return nullable values
-- Lacks support union types for arguments
-- Lacks support for record arguments with optional properties
-- You need to import the library and run it somewhere to get the output, then copy it into a file. A CLI workflow would be better.
+In the example above, an `Employee` can use all methods/members from `Person`.
+
+# Missing features:
+- Support for methods that return nullable values
+- Support for union types for arguments
+- Support for record arguments with optional properties

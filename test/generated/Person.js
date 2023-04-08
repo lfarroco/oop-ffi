@@ -1,7 +1,5 @@
-
-
 export const newPersonImpl = (a, b) =>
-	new Person(a, b);
+  new Person(a, b);
 
 export const nameImpl = obj => obj.name;
 

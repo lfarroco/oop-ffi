@@ -1,6 +1,5 @@
-
 export const newEmployeeImpl = (a, b, c) =>
-	new Employee(a, b, c);
+  new Employee(a, b, c);
 
 export const employerImpl = obj => obj.employer;
 
