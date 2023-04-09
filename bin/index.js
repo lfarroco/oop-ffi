@@ -10527,16 +10527,16 @@ var pursMethods = function(methods) {
     return bind15(methods)(function(v) {
       var lowerCaseName = toLower(className);
       var returnTypeImpl = function() {
-        var $109 = v.returns === className;
-        if ($109) {
+        var $111 = v.returns === className;
+        if ($111) {
           return lowerCaseName;
         }
         ;
         return v.returns;
       }();
       var returnTypeMethod = function() {
-        var $110 = v.returns === className;
-        if ($110) {
+        var $112 = v.returns === className;
+        if ($112) {
           return lowerCaseName;
         }
         ;
@@ -10599,7 +10599,7 @@ var decodeClass = function(json) {
     return new Right(v.value0);
   }
   ;
-  throw new Error("Failed pattern match at Main (line 101, column 20 - line 103, column 27): " + [v.constructor.name]);
+  throw new Error("Failed pattern match at Main (line 102, column 20 - line 104, column 27): " + [v.constructor.name]);
 };
 var cliArgs = /* @__PURE__ */ apply(parserApply)(/* @__PURE__ */ map(parserFunctor)(function(v) {
   return function(v1) {
@@ -10615,8 +10615,8 @@ var classDefinition = function(name3) {
       return "instance " + (className + (" " + (name3 + "Instance")));
     })($$extends))(["instance " + (name3 + (" " + (name3 + "Instance")))]);
     var extendsFrom = function() {
-      var $128 = length($$extends) < 1;
-      if ($128) {
+      var $130 = length($$extends) < 1;
+      if ($130) {
         return "class " + (name3 + " a");
       }
       ;
@@ -10628,20 +10628,25 @@ var classDefinition = function(name3) {
   };
 };
 var generatePurs = function(v) {
+  var exports = intercalate5(",\n  ")(append16(["  Class " + v.name, v.name + "Instance"])(append16(map20(function(v1) {
+    return v1.name;
+  })(v.methods))(map20(function(v1) {
+    return v1.name;
+  })(v.members))));
   var constructorArgCount = length(v.constructor);
   var allArgumentLengths = sort3(nub3(filter(function(n) {
     return n > 0;
   })(append16(map20(function(v1) {
     return length(v1.args) + 1 | 0;
   })(v.methods))(append16([constructorArgCount])(function() {
-    var $132 = length(v.members) > 0;
-    if ($132) {
+    var $134 = length(v.members) > 0;
+    if ($134) {
       return [1];
     }
     ;
     return [];
   }())))));
-  return intercalate5("\n")(append16(["module " + (v.name + " where"), "", "import Prelude", "import Data.Maybe (Maybe)", "import Data.Nullable (Nullable, toMaybe)", "import Effect (Effect)", "import Effect.Uncurried (" + (intercalate5(", ")(map20(function(x) {
+  return intercalate5("\n")(append16(["module " + (v.name + (" (\n" + (exports + "\n) where"))), "", "import Prelude", "import Data.Maybe (Maybe)", "import Data.Nullable (Nullable, toMaybe)", "import Effect (Effect)", "import Effect.Uncurried (" + (intercalate5(", ")(map20(function(x) {
     return "EffectFn" + (show6(x) + (", runEffectFn" + show6(x)));
   })(allArgumentLengths)) + ")")])(append16(map20(function(extend2) {
     return "import " + (extend2 + (" (class " + (extend2 + ")")));
