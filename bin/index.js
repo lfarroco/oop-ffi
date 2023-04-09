@@ -10628,7 +10628,7 @@ var classDefinition = function(name3) {
   };
 };
 var generatePurs = function(v) {
-  var exports = intercalate5(",\n  ")(append16(["  Class " + v.name, v.name + "Instance"])(append16(map20(function(v1) {
+  var exports = intercalate5(",\n  ")(append16(["  class " + v.name, v.name + "Instance", "new" + v.name])(append16(map20(function(v1) {
     return v1.name;
   })(v.methods))(map20(function(v1) {
     return v1.name;

@@ -14,8 +14,8 @@
   },
   "scripts": {
     "mkbin": "spago bundle-app --platform=node -t bin/index.js",
-    "generate.person": "node . --path test/specs/person.json --output test/generated/",
-    "generate.employee": "node . --path test/specs/employee.json --output test/generated/",
+    "generate.person": "node bin/index.js --path test/specs/person.json --output test/generated/",
+    "generate.employee": "node bin/index.js --path test/specs/employee.json --output test/generated/",
     "generate.test": "npm run generate.person && npm run generate.employee",
     "test": "npm run mkbin && npm run generate.test && spago test"
   }

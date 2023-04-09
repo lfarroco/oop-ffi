@@ -73,7 +73,7 @@ generatePurs { name, constructor, extends, members, methods } =
       )
         # Array.nub
         # Array.sort
-    exports = Array.intercalate ",\n  " $ [ "  Class " <> name, name <> "Instance" ] <> (methods # map _.name) <> (members # map _.name)
+    exports = Array.intercalate ",\n  " $ [ "  class " <> name, name <> "Instance", "new" <> name ] <> (methods # map _.name) <> (members # map _.name)
   in
     Array.intercalate "\n" $
       [ "module " <> name <> " (\n" <> exports <> "\n) where"

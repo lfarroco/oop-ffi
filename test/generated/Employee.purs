@@ -1,4 +1,12 @@
-module Employee where
+module Employee (
+  class Employee,
+  EmployeeInstance,
+  newEmployee,
+  sayEmployer,
+  setRoom,
+  employer,
+  room
+) where
 
 import Prelude
 import Data.Maybe (Maybe)

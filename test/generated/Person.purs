@@ -1,4 +1,12 @@
-module Person where
+module Person (
+  class Person,
+  PersonInstance,
+  newPerson,
+  sayName,
+  setAge,
+  name,
+  age
+) where
 
 import Prelude
 import Data.Maybe (Maybe)
